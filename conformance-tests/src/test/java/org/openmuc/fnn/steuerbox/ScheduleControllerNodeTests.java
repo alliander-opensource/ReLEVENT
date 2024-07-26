@@ -130,13 +130,13 @@ public class ScheduleControllerNodeTests extends AllianderBaseTest {
         //initial state: no schedule active -> reserve schedule is working
         //test, that ActSchdRef contains a reference of the reserve schedule
 
-        assertEquals(scheduleConstants.getReserveSchedule(), dut.readActiveSchedule(scheduleConstants.getController()),
+        assertEquals(scheduleConstants.getReserveSchedule(), dutAccess61850.readActiveSchedule(scheduleConstants.getController()),
                 "Expecting reserve schedules to run in initial state");
 
         String schedule = scheduleConstants.getScheduleName(1);
         //write and activate a schedule with a higher priority than the reserve schedule
         Instant scheduleStart = Instant.now().plus(Duration.ofSeconds(1));
-        dut.writeAndEnableSchedule(scheduleConstants.getValueAccess().activateScheduleWithDefaultValue(schedule),
+        dutAccess61850.writeAndEnableSchedule(scheduleConstants.getValueAccess().activateScheduleWithDefaultValue(schedule),
                 Duration.ofSeconds(2), scheduleStart, 100);
 
         while (Instant.now().isBefore(scheduleStart.plus(Duration.ofMillis(200)))) {
@@ -144,13 +144,13 @@ public class ScheduleControllerNodeTests extends AllianderBaseTest {
         }
 
         //test, that ActSchdRef contains a reference of the active schedule
-        assertEquals(schedule, dut.readActiveSchedule(scheduleConstants.getController()));
+        assertEquals(schedule, dutAccess61850.readActiveSchedule(scheduleConstants.getController()));
 
         // wait until the active schedule finished service
         Thread.sleep(2000);
 
         //make sure the reserve schedule is active again
-        assertEquals(scheduleConstants.getReserveSchedule(), dut.readActiveSchedule(scheduleConstants.getController()),
+        assertEquals(scheduleConstants.getReserveSchedule(), dutAccess61850.readActiveSchedule(scheduleConstants.getController()),
                 "Did not return to system reserve schedule after execution time");
     }
 
@@ -168,22 +168,22 @@ public class ScheduleControllerNodeTests extends AllianderBaseTest {
         Instant start = Instant.now().plus(Duration.ofMillis(500));
         // schedule 1 with low prio
         String schedule1Name = scheduleConstants.getScheduleName(1);
-        dut.writeAndEnableSchedule(scheduleConstants.getValueAccess().activateScheduleWithDefaultValue(schedule1Name),
+        dutAccess61850.writeAndEnableSchedule(scheduleConstants.getValueAccess().activateScheduleWithDefaultValue(schedule1Name),
                 Duration.ofSeconds(1), start, 20);
 
         // schedule 2 starts a bit after schedule 1 but with higher prio
         String schedule2Name = scheduleConstants.getScheduleName(2);
-        dut.writeAndEnableSchedule(scheduleConstants.getValueAccess().activateScheduleWithDefaultValue(schedule2Name),
+        dutAccess61850.writeAndEnableSchedule(scheduleConstants.getValueAccess().activateScheduleWithDefaultValue(schedule2Name),
                 Duration.ofSeconds(1), start.plus(Duration.ofSeconds(1)), 200);
 
         // wait until start (and a bit longer), then schedule 1 should be active
         long millisUntilStart = Duration.between(Instant.now(), start).toMillis();
         Thread.sleep(millisUntilStart + 200);
-        assertEquals(dut.readActiveSchedule(scheduleConstants.getController()), schedule1Name);
+        assertEquals(dutAccess61850.readActiveSchedule(scheduleConstants.getController()), schedule1Name);
 
         // sleep 1s, after that schedule 2 should be active
         Thread.sleep(1_000);
-        assertEquals(dut.readActiveSchedule(scheduleConstants.getController()), schedule2Name);
+        assertEquals(dutAccess61850.readActiveSchedule(scheduleConstants.getController()), schedule2Name);
 
         Thread.sleep(1000);
     }

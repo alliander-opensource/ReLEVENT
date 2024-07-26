@@ -55,7 +55,7 @@ public class AllianderTests extends AllianderBaseTest {
     void tenSchedulesAreSupportedPerType(ScheduleDefinitions<?> scheduleConstants) {
         int j = 0;
         for (String scheduleName : scheduleConstants.getAllScheduleNames()) {
-            boolean ScheduleExistsOrNot = dut.nodeExists(scheduleName);
+            boolean ScheduleExistsOrNot = dutAccess61850.nodeExists(scheduleName);
             Assertions.assertTrue(ScheduleExistsOrNot, "Schedule " + scheduleName + " does not exist");
             if (ScheduleExistsOrNot)
                 j++;
@@ -90,7 +90,7 @@ public class AllianderTests extends AllianderBaseTest {
         for (int i = 1; i <= 100; i++) {
             String numberAsStringFilledUpWithZeros = String.format("%03d", i);
             String valueConfigurationNode = scheduleName + valNodeName + numberAsStringFilledUpWithZeros;
-            boolean valueExists = dut.nodeExists(valueConfigurationNode);
+            boolean valueExists = dutAccess61850.nodeExists(valueConfigurationNode);
             Assertions.assertTrue(valueExists, "Missing node " + valueConfigurationNode);
         }
     }
@@ -102,7 +102,7 @@ public class AllianderTests extends AllianderBaseTest {
     void scheduleSupportsTimebasedScheduling(ScheduleDefinitions scheduleConstants) {
         for (int i = 1; i <= 10; i++) {
             String aTimerNode = scheduleConstants.getScheduleName(i) + ".StrTm01";
-            Assertions.assertTrue(dut.nodeExists(aTimerNode),
+            Assertions.assertTrue(dutAccess61850.nodeExists(aTimerNode),
                     "Node " + aTimerNode + " does not exist. Time based scheduling is not possible without this node");
         }
     }
@@ -113,7 +113,7 @@ public class AllianderTests extends AllianderBaseTest {
     @MethodSource("getAllSchedules")
     void allExpectedSchedulesExist(ScheduleDefinitions<?> scheduleConstants) {
         for (String scheduleName : scheduleConstants.getAllScheduleNames()) {
-            Assertions.assertTrue(dut.nodeExists(scheduleName),
+            Assertions.assertTrue(dutAccess61850.nodeExists(scheduleName),
                     "Expected schedule " + scheduleName + " to exist but did not find it");
         }
     }
@@ -123,39 +123,39 @@ public class AllianderTests extends AllianderBaseTest {
     @ParameterizedTest(name = " running {0}")
     @MethodSource("getAllSchedules")
     void reserveSchedulesExist(ScheduleDefinitions scheduleConstants) {
-        Assertions.assertTrue(dut.nodeExists(scheduleConstants.getReserveSchedule()));
+        Assertions.assertTrue(dutAccess61850.nodeExists(scheduleConstants.getReserveSchedule()));
     }
 
     @Requirements(S05a)
     @Test
     void absolutePowerValueSchedulesAreSupported() {
-        for (String absolutePowerValueSchedule : dut.powerSchedules.getAllScheduleNames()) {
-            Assertions.assertTrue(dut.nodeExists(absolutePowerValueSchedule));
+        for (String absolutePowerValueSchedule : dutAccess61850.powerSchedules.getAllScheduleNames()) {
+            Assertions.assertTrue(dutAccess61850.nodeExists(absolutePowerValueSchedule));
         }
     }
 
     @Requirements(S05b)
     @Test
     void maxPowerValueSchedulesAreSupported() {
-        for (String absolutePowerValueSchedule : dut.maxPowerSchedules.getAllScheduleNames()) {
-            Assertions.assertTrue(dut.nodeExists(absolutePowerValueSchedule));
+        for (String absolutePowerValueSchedule : dutAccess61850.maxPowerSchedules.getAllScheduleNames()) {
+            Assertions.assertTrue(dutAccess61850.nodeExists(absolutePowerValueSchedule));
         }
     }
 
     @Requirements(S05c)
     @Test
     void onOffSchedulesAreSupported() {
-        for (String absolutePowerValueSchedule : dut.onOffSchedules.getAllScheduleNames()) {
-            Assertions.assertTrue(dut.nodeExists(absolutePowerValueSchedule));
+        for (String absolutePowerValueSchedule : dutAccess61850.onOffSchedules.getAllScheduleNames()) {
+            Assertions.assertTrue(dutAccess61850.nodeExists(absolutePowerValueSchedule));
         }
     }
 
     @Test
     @Requirements(S11)
     void threeReserveSchedulesExist() {
-        Assertions.assertTrue(dut.nodeExists(dut.onOffSchedules.getReserveSchedule()));
-        Assertions.assertTrue(dut.nodeExists(dut.maxPowerSchedules.getReserveSchedule()));
-        Assertions.assertTrue(dut.nodeExists(dut.powerSchedules.getReserveSchedule()));
+        Assertions.assertTrue(dutAccess61850.nodeExists(dutAccess61850.onOffSchedules.getReserveSchedule()));
+        Assertions.assertTrue(dutAccess61850.nodeExists(dutAccess61850.maxPowerSchedules.getReserveSchedule()));
+        Assertions.assertTrue(dutAccess61850.nodeExists(dutAccess61850.powerSchedules.getReserveSchedule()));
     }
 
 }

@@ -51,12 +51,12 @@ public class ScheduleExecutionTest extends AllianderBaseTest {
 
     @BeforeAll
     public static void setDefaultValuesForReserveSchedules() throws ServiceError, IOException {
-        dut.writeScheduleValues(
-                dut.powerSchedules.getValueAccess().prepareWriting(0, dut.powerSchedules.getReserveSchedule()));
-        dut.writeScheduleValues(
-                dut.maxPowerSchedules.getValueAccess().prepareWriting(0, dut.maxPowerSchedules.getReserveSchedule()));
-        dut.writeScheduleValues(
-                dut.onOffSchedules.getValueAccess().prepareWriting(false, dut.onOffSchedules.getReserveSchedule()));
+        dutAccess61850.writeScheduleValues(
+                dutAccess61850.powerSchedules.getValueAccess().prepareWriting(0, dutAccess61850.powerSchedules.getReserveSchedule()));
+        dutAccess61850.writeScheduleValues(
+                dutAccess61850.maxPowerSchedules.getValueAccess().prepareWriting(0, dutAccess61850.maxPowerSchedules.getReserveSchedule()));
+        dutAccess61850.writeScheduleValues(
+                dutAccess61850.onOffSchedules.getValueAccess().prepareWriting(false, dutAccess61850.onOffSchedules.getReserveSchedule()));
         log.info("Set default values for reserve schedules");
     }
 
@@ -75,57 +75,57 @@ public class ScheduleExecutionTest extends AllianderBaseTest {
         final Instant schedulesStart = testExecutionStart.plus(ofSeconds(10));
 
         //schedule 1:
-        dut.writeAndEnableSchedule(
+        dutAccess61850.writeAndEnableSchedule(
                 scheduleConstants.prepareSchedule(Arrays.asList(10, 30, 70, 100, 100, 100), 1, interval,
                         schedulesStart.plus(interval), 25));
 
         // schedule 2:
-        dut.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(11, 31, 71, 99, 99, 99), 2, interval,
+        dutAccess61850.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(11, 31, 71, 99, 99, 99), 2, interval,
                 schedulesStart.plus(interval.multipliedBy(5)), 40));
 
         // schedule 3:
-        dut.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(12, 32, 72, 98, 98), 3, interval,
+        dutAccess61850.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(12, 32, 72, 98, 98), 3, interval,
                 schedulesStart.plus(interval.multipliedBy(9)), 60));
 
         //schedule 4, ends after 44s:
-        dut.writeAndEnableSchedule(
+        dutAccess61850.writeAndEnableSchedule(
                 scheduleConstants.prepareSchedule(Arrays.asList(13, 33, 73, 97, 97, 97, 97, 97, 97, 97), 4, interval,
                         schedulesStart.plus(interval.multipliedBy(13)), 70));
 
         //schedule 5, ends after 42s
-        dut.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(70, 70, 70, 70, 70), 5, interval,
+        dutAccess61850.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(70, 70, 70, 70, 70), 5, interval,
                 schedulesStart.plus(interval.multipliedBy(17)), 100));
 
         //schedule 6,
-        dut.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(90), 6, interval,
+        dutAccess61850.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(90), 6, interval,
                 schedulesStart.plus(interval.multipliedBy(18)), 120));
 
         //schedule 7,
 
-        dut.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(90), 7, interval,
+        dutAccess61850.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(90), 7, interval,
                 schedulesStart.plus(interval.multipliedBy(20)), 120));
 
         //schedule 8:
-        dut.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(10), 8, interval,
+        dutAccess61850.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(10), 8, interval,
                 schedulesStart.plus(interval.multipliedBy(22)), 80));
 
         //schedule 9
-        dut.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(80), 9, interval,
+        dutAccess61850.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(80), 9, interval,
                 schedulesStart.plus(interval.multipliedBy(23)), 20));
 
         //schedule 10
-        dut.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(100), 10, interval,
+        dutAccess61850.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(100), 10, interval,
                 schedulesStart.plus(interval.multipliedBy(24)), 11));
 
         log.debug("Test setup took {}", Duration.between(testExecutionStart, now()));
 
-        float sysResValue = dut.readConstantValueFromSysResScheduleFromModelNode(scheduleConstants.getValueAccess(),
+        float sysResValue = dutAccess61850.readConstantValueFromSysResScheduleFromModelNode(scheduleConstants.getValueAccess(),
                 scheduleConstants.getReserveSchedule()).floatValue();
 
         List<Float> expectedValues = Arrays.asList(sysResValue, 10f, 30f, 70f, 100f, 11f, 31f, 71f, 99f, 12f, 32f, 72f,
                 98f, 13f, 33f, 73f, 97f, 70f, 90f, 70f, 90f, 70f, 10f, 80f, 100f, sysResValue);
 
-        List<Number> actualValues = dut.monitor(schedulesStart.plus(interval.dividedBy(2)), interval.multipliedBy(26),
+        List<Number> actualValues = dutAccess61850.monitor(schedulesStart.plus(interval.dividedBy(2)), interval.multipliedBy(26),
                 interval, scheduleConstants);
 
         log.info("expected values {}", expectedValues);
@@ -147,7 +147,7 @@ public class ScheduleExecutionTest extends AllianderBaseTest {
         final Instant testExecutionStart = now();
         final Instant schedulesStart = testExecutionStart.plus(ofSeconds(5));
 
-        boolean sysResValue = dut.readConstantValueFromSysResScheduleFromModelNode(scheduleConstants.getValueAccess(),
+        boolean sysResValue = dutAccess61850.readConstantValueFromSysResScheduleFromModelNode(scheduleConstants.getValueAccess(),
                 scheduleConstants.getReserveSchedule());
 
         log.debug("Test setup took {}", Duration.between(testExecutionStart, now()));
@@ -166,39 +166,39 @@ public class ScheduleExecutionTest extends AllianderBaseTest {
         // setting up schedules with increasing priorities, starting one after the other. exception: schedule 10 (is set up last)
 
         //schedule 1:
-        dut.writeAndEnableSchedule(
+        dutAccess61850.writeAndEnableSchedule(
                 scheduleConstants.prepareSchedule(Arrays.asList(s1, s1, s1), 1, interval, schedulesStart.plus(interval),
                         15));
         //schedule 2:
-        dut.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(s2, s2, s2), 2, interval,
+        dutAccess61850.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(s2, s2, s2), 2, interval,
                 schedulesStart.plus(interval.multipliedBy(2)), 20));
         //schedule 3:
-        dut.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(s3, s3), 3, interval,
+        dutAccess61850.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(s3, s3), 3, interval,
                 schedulesStart.plus(interval.multipliedBy(3)), 30));
         //schedule 4:
-        dut.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(s4, s4), 4, interval,
+        dutAccess61850.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(s4, s4), 4, interval,
                 schedulesStart.plus(interval.multipliedBy(4)), 40));
         //schedule 5:
-        dut.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(s5, s5), 5, interval,
+        dutAccess61850.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(s5, s5), 5, interval,
                 schedulesStart.plus(interval.multipliedBy(5)), 50));
         //schedule 6:
-        dut.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(s6, s6), 6, interval,
+        dutAccess61850.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(s6, s6), 6, interval,
                 schedulesStart.plus(interval.multipliedBy(6)), 60));
         //schedule 7:
-        dut.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(s7, s7), 7, interval,
+        dutAccess61850.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(s7, s7), 7, interval,
                 schedulesStart.plus(interval.multipliedBy(7)), 70));
         //schedule 8:
-        dut.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(s8, s8), 8, interval,
+        dutAccess61850.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(s8, s8), 8, interval,
                 schedulesStart.plus(interval.multipliedBy(8)), 80));
         //schedule 9:
-        dut.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(s9), 9, interval,
+        dutAccess61850.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(s9), 9, interval,
                 schedulesStart.plus(interval.multipliedBy(9)), 90));
         //schedule 10: starts together with schedule 9 but with lower priority. lasts longer, so is activated after schedule 9 is stopped
-        dut.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(s10, s10), 10, interval,
+        dutAccess61850.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(s10, s10), 10, interval,
                 schedulesStart.plus(interval.multipliedBy(9)), 11));
 
         List<Boolean> expectedValues = Arrays.asList(sysResValue, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, sysResValue);
-        List<Boolean> actualValues = dut.monitor(schedulesStart.plus(interval.dividedBy(2)), interval.multipliedBy(12),
+        List<Boolean> actualValues = dutAccess61850.monitor(schedulesStart.plus(interval.dividedBy(2)), interval.multipliedBy(12),
                 interval, scheduleConstants);
 
         log.info("expected values {}", expectedValues);
@@ -224,25 +224,25 @@ public class ScheduleExecutionTest extends AllianderBaseTest {
         final Instant schedulesStart = testExecutionStart.plus(ofSeconds(4));
 
         //schedule 5, start after 2s, duration 12s, Prio 40
-        dut.writeAndEnableSchedule(
+        dutAccess61850.writeAndEnableSchedule(
                 scheduleConstants.prepareSchedule(Arrays.asList(10, 10, 10, 10, 10, 10), 5, ofSeconds(4),
                         schedulesStart, 40));
         //schedule 1, start after 4s, duration 4s, Prio 40
-        dut.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(70, 100), 1, ofSeconds(4),
+        dutAccess61850.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(70, 100), 1, ofSeconds(4),
                 schedulesStart.plus(ofSeconds(4)), 40));
         //schedule 2, start after 8s, duration 4s, Prio 40
-        dut.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(70, 70), 2, ofSeconds(4),
+        dutAccess61850.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(70, 70), 2, ofSeconds(4),
                 schedulesStart.plus(ofSeconds(12)), 40));
         //schedule 3, start after 14s, duration 2s, Prio 60
-        dut.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(100), 3, ofSeconds(4),
+        dutAccess61850.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(100), 3, ofSeconds(4),
                 schedulesStart.plus(ofSeconds(24)), 60));
 
-        float sysResValue = (float) dut.readConstantValueFromSysResScheduleFromModelNode(
+        float sysResValue = (float) dutAccess61850.readConstantValueFromSysResScheduleFromModelNode(
                 scheduleConstants.getValueAccess(), scheduleConstants.getReserveSchedule());
         List<Float> expectedValues = Arrays.asList(sysResValue, 10f, 70f, 100f, 70f, 70f, 10f, 100f, sysResValue);
 
         Instant monitoringStart = testExecutionStart.plus(ofSeconds(2));
-        List<Number> actualValues = dut.monitor(monitoringStart, ofSeconds(36), ofSeconds(4), scheduleConstants);
+        List<Number> actualValues = dutAccess61850.monitor(monitoringStart, ofSeconds(36), ofSeconds(4), scheduleConstants);
         log.info("expected values {}", expectedValues);
         log.info("observed values {}", actualValues);
         assertValuesMatch(expectedValues, actualValues, 0.01);
@@ -263,19 +263,19 @@ public class ScheduleExecutionTest extends AllianderBaseTest {
         final Instant schedulesStart = testExecutionStart.plus(ofSeconds(2));
 
         //schedule 1, start after 2s, duration 6s, Prio 40
-        dut.writeAndEnableSchedule(
+        dutAccess61850.writeAndEnableSchedule(
                 scheduleConstants.prepareSchedule(Arrays.asList(true, true, true), 1, ofSeconds(2), schedulesStart,
                         40));
         //schedule 2, start after 4s, duration 4s, Prio 40
-        dut.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(false, false), 2, ofSeconds(2),
+        dutAccess61850.writeAndEnableSchedule(scheduleConstants.prepareSchedule(Arrays.asList(false, false), 2, ofSeconds(2),
                 schedulesStart.plus(ofSeconds(2)), 40));
 
-        boolean sysResValue = (boolean) dut.readConstantValueFromSysResScheduleFromModelNode(
+        boolean sysResValue = (boolean) dutAccess61850.readConstantValueFromSysResScheduleFromModelNode(
                 scheduleConstants.getValueAccess(), scheduleConstants.getReserveSchedule());
         List<Boolean> expectedValues = Arrays.asList(sysResValue, true, false, false, sysResValue);
 
         Instant monitoringStart = testExecutionStart.plus(ofSeconds(1));
-        List<Boolean> actualValues = dut.monitor(monitoringStart, ofSeconds(10), ofSeconds(2), scheduleConstants);
+        List<Boolean> actualValues = dutAccess61850.monitor(monitoringStart, ofSeconds(10), ofSeconds(2), scheduleConstants);
         log.info("expected values {}", expectedValues);
         log.info("observed values {}", actualValues);
         assertValuesMatch(expectedValues, actualValues);
@@ -294,7 +294,7 @@ public class ScheduleExecutionTest extends AllianderBaseTest {
     public void test_samePrioAndStartFloatSchedule(ScheduleDefinitions<Number> scheduleConstants)
             throws ServiceError, IOException, IEC61850MissconfiguredException, InterruptedException {
 
-        float sysResValue = (float) dut.readConstantValueFromSysResScheduleFromModelNode(
+        float sysResValue = (float) dutAccess61850.readConstantValueFromSysResScheduleFromModelNode(
                 scheduleConstants.getValueAccess(), scheduleConstants.getReserveSchedule());
 
         Instant start = Instant.now();
@@ -303,11 +303,11 @@ public class ScheduleExecutionTest extends AllianderBaseTest {
         PreparedSchedule schedule2 = scheduleConstants.prepareSchedule(Arrays.asList(100f, 100f, 100f), 2, ofSeconds(3),
                 start.plus(ofSeconds(3)), 40);
 
-        dut.writeAndEnableSchedule(schedule1);
-        dut.writeAndEnableSchedule(schedule2);
+        dutAccess61850.writeAndEnableSchedule(schedule1);
+        dutAccess61850.writeAndEnableSchedule(schedule2);
 
         List<Float> expectedValues = Arrays.asList(sysResValue, 70f, 70f, 100f, sysResValue);
-        List<Number> actualValues = dut.monitor(start.plus(ofMillis(1000)), ofSeconds(15), ofSeconds(3),
+        List<Number> actualValues = dutAccess61850.monitor(start.plus(ofMillis(1000)), ofSeconds(15), ofSeconds(3),
                 scheduleConstants);
         assertValuesMatch(expectedValues, actualValues, 0.01);
     }
@@ -323,7 +323,7 @@ public class ScheduleExecutionTest extends AllianderBaseTest {
     @MethodSource("getOnOffSchedules")
     public void test_samePrioAndStartOnOffSchedule(ScheduleDefinitions<Boolean> scheduleConstants)
             throws ServiceError, IOException, IEC61850MissconfiguredException, InterruptedException {
-        boolean sysResValue = dut.readConstantValueFromSysResScheduleFromModelNode(scheduleConstants.getValueAccess(),
+        boolean sysResValue = dutAccess61850.readConstantValueFromSysResScheduleFromModelNode(scheduleConstants.getValueAccess(),
                 scheduleConstants.getReserveSchedule());
 
         Instant start = Instant.now();
@@ -332,11 +332,11 @@ public class ScheduleExecutionTest extends AllianderBaseTest {
         PreparedSchedule schedule2 = scheduleConstants.prepareSchedule(Arrays.asList(false, false, false), 2,
                 ofSeconds(3), start.plus(ofSeconds(3)), 40);
 
-        dut.writeAndEnableSchedule(schedule1);
-        dut.writeAndEnableSchedule(schedule2);
+        dutAccess61850.writeAndEnableSchedule(schedule1);
+        dutAccess61850.writeAndEnableSchedule(schedule2);
 
         List<Boolean> expectedValues = Arrays.asList(sysResValue, true, true, false, sysResValue);
-        List<Boolean> actualValues = dut.monitor(start.plus(ofMillis(1000)), ofSeconds(15), ofSeconds(3),
+        List<Boolean> actualValues = dutAccess61850.monitor(start.plus(ofMillis(1000)), ofSeconds(15), ofSeconds(3),
                 scheduleConstants);
         assertValuesMatch(expectedValues, actualValues);
     }

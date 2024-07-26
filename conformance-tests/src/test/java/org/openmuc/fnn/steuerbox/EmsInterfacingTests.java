@@ -38,17 +38,19 @@ public class EmsInterfacingTests extends AllianderBaseTest {
     private static final Logger log = LoggerFactory.getLogger(EmsInterfacingTests.class);
 
     final int defaultScheduleValue;
-    final MqttUtility util;
+    final MqttUtility dutAccessMQTT;
 
     public EmsInterfacingTests() throws ExecutionException, InterruptedException, ServiceError, IOException,
             IEC61850MissconfiguredException {
-        defaultScheduleValue = dut.readConstantValueFromSysResScheduleFromModelNode(
-                dut.maxPowerSchedules.getValueAccess(), dut.maxPowerSchedules.getReserveSchedule()).intValue();
-        util = new MqttUtility();
+        defaultScheduleValue = dutAccess61850.readConstantValueFromSysResScheduleFromModelNode(
+                dutAccess61850.maxPowerSchedules.getValueAccess(),
+                dutAccess61850.maxPowerSchedules.getReserveSchedule()).intValue();
+        dutAccessMQTT = new MqttUtility();
     }
 
     @Description("Tests that a schedule transmitted via MQTT will be forwarded to the IEC 61850 server. "
-            + "Makes sure that schedule values and interval are maintained. Schedule priority is fixed to 20.")
+            + "Makes sure that schedule values and interval are maintained. Schedule priority is fixed to 20. "
+            + "For the test setup, a schedule is created using a MQTT interface, the actual tests are carried out using a IEC 61850 client.")
     @Test
     void schedulesAreForwardedAsIEC61850() throws ServiceError, IOException, InterruptedException {
         final Instant expectedStart = Instant.now().plus(Duration.ofMinutes(5)).truncatedTo(SECONDS);
@@ -56,15 +58,17 @@ public class EmsInterfacingTests extends AllianderBaseTest {
         List<Number> scheduleValues = Arrays.asList(42, 1337);
         Duration scheduleInterval = Duration.ofMinutes(5);
 
-        PreparedSchedule mqttSchedule = dut.maxPowerSchedules.prepareSchedule(scheduleValues, scheduleNumber,
+        PreparedSchedule mqttSchedule = dutAccess61850.maxPowerSchedules.prepareSchedule(scheduleValues, scheduleNumber,
                 scheduleInterval, expectedStart, 200);
-        util.writeAndEnableSchedule(mqttSchedule);
+        dutAccessMQTT.writeAndEnableSchedule(mqttSchedule);
 
         Thread.sleep(1_000);
 
-        assertEquals(expectedStart, dut.getScheduleStart(dut.maxPowerSchedules.getScheduleName(scheduleNumber)));
+        assertEquals(expectedStart,
+                dutAccess61850.getScheduleStart(dutAccess61850.maxPowerSchedules.getScheduleName(scheduleNumber)));
 
-        ModelNode node = dut.getNodeWithValues(dut.maxPowerSchedules.getScheduleName(scheduleNumber));
+        ModelNode node = dutAccess61850.getNodeWithValues(
+                dutAccess61850.maxPowerSchedules.getScheduleName(scheduleNumber));
         String node1 = node.getChild("ValASG001").getBasicDataAttributes().get(0).getValueString(); // sollte 42 sein
         assertEquals(42, Float.valueOf(node1));
         String node2 = node.getChild("ValASG002").getBasicDataAttributes().get(0).getValueString(); // sollte 1337 sein
@@ -88,7 +92,8 @@ public class EmsInterfacingTests extends AllianderBaseTest {
         assertEquals(20, Long.valueOf(schdPrio)); // given prio is ignored when transmitting via mqtt!
     }
 
-    @Description("Tests that a schedule that covers an entire day can be created and transmitted via MQTT interface.")
+    @Description("Tests that a schedule that covers an entire day can be created and transmitted via MQTT interface."
+            + "For the test setup, a schedule is written using MQTT. The actual tests are carried out using a IEC 61850 client.")
     @Test
     void oneDayCanBeCovered() throws ServiceError, IOException, InterruptedException {
 
@@ -100,13 +105,14 @@ public class EmsInterfacingTests extends AllianderBaseTest {
                 .collect(Collectors.toList());
         Duration scheduleInterval = Duration.ofMinutes(15);
 
-        PreparedSchedule mqttSchedule = dut.maxPowerSchedules.prepareSchedule(scheduleValues, scheduleNumber,
+        PreparedSchedule mqttSchedule = dutAccess61850.maxPowerSchedules.prepareSchedule(scheduleValues, scheduleNumber,
                 scheduleInterval, expectedStart, 200);
-        util.writeAndEnableSchedule(mqttSchedule);
+        dutAccessMQTT.writeAndEnableSchedule(mqttSchedule);
 
         Thread.sleep(1_000);
 
-        ModelNode node = dut.getNodeWithValues(dut.maxPowerSchedules.getScheduleName(scheduleNumber));
+        ModelNode node = dutAccess61850.getNodeWithValues(
+                dutAccess61850.maxPowerSchedules.getScheduleName(scheduleNumber));
 
         int valuesChecked = 0;
         for (int i = 1; i <= 100; i++) {
@@ -136,21 +142,22 @@ public class EmsInterfacingTests extends AllianderBaseTest {
     @Description("This test covers: Schedules are published via MQTT. " + "Publishing interval is 5 seconds. "
             + "Format of the MQTT JSON payload is as expected. "
             + "Schedule values and schedule timestamps have the expected values. "
-            + "Does not check 'FractionOfSecond' of published schedule.")
+            + "Does not check 'FractionOfSecond' of published schedule."
+            + "For the test setup, a schedule is created using a IEC 61850 client. Then, the tests are carried out on MQTT messages that are created by FLEDGE")
     @Test
     void schedulesAreForwardedInExpectedFormat() throws ServiceError, IOException, InterruptedException {
 
         Instant iec61850ScheduleStart = Instant.now().plus(3, HOURS).truncatedTo(SECONDS);
         List<Number> iec61850ScheduleValues = Arrays.asList(1d, 42d, 1337d);
         Duration iec61850ScheduleInterval = ofSeconds(1);
-        PreparedSchedule iec61850schedule = dut.maxPowerSchedules.prepareSchedule(//
+        PreparedSchedule iec61850schedule = dutAccess61850.maxPowerSchedules.prepareSchedule(//
                 iec61850ScheduleValues,//
                 1,// fixed for the test: fledge setup tested and set up for this schedule
                 iec61850ScheduleInterval,//
                 iec61850ScheduleStart,//
                 200);// schedule prio is arbitrary, needs to be something larger than default prio
-        dut.writeAndEnableSchedule(iec61850schedule);
-        Single<List<MqttUtility.Timestamped<Schedule>>> result = util.fetchScheduleUpdate(1,
+        dutAccess61850.writeAndEnableSchedule(iec61850schedule);
+        Single<List<MqttUtility.Timestamped<Schedule>>> result = dutAccessMQTT.fetchScheduleUpdate(1,
                 Duration.between(Instant.now(), iec61850ScheduleStart).plus(iec61850ScheduleInterval.multipliedBy(2)));
         log.debug("Schedule written, awaiting publishing of result schedule (happens every 5 seconds))");
         List<MqttUtility.Timestamped<Schedule>> timestampedObjects = result.blockingGet();
@@ -179,21 +186,23 @@ public class EmsInterfacingTests extends AllianderBaseTest {
                 sched.getScheduleEntries().get(4).startEpochSecond);
     }
 
-    @Description("Schedules are published via MQTT. Publishing interval is 5 seconds. Schedule values and schedule timestamps have the expected values which do not change over time. Does not check 'FractionOfSecond' of published schedule.")
+    @Description(
+            "Schedules are published via MQTT. Publishing interval is 5 seconds. Schedule values and schedule timestamps have the expected values which do not change over time. Does not check 'FractionOfSecond' of published schedule."
+                    + "For the test setup, a schedule is created using a IEC 61850 client. Then, the tests are carried out on MQTT messages that are created by FLEDGE")
     @Test
     void schedulesArePublishedEvery5Seconds_valuesDoNotDiffer() throws ServiceError, IOException, InterruptedException {
 
         Instant iec61850ScheduleStart = Instant.now().plus(3, HOURS).truncatedTo(SECONDS);
         List<Number> iec61850ScheduleValues = Arrays.asList(1d, 42d, 1337d);
         Duration iec61850ScheduleInterval = ofSeconds(1);
-        PreparedSchedule iec61850schedule = dut.maxPowerSchedules.prepareSchedule(//
+        PreparedSchedule iec61850schedule = dutAccess61850.maxPowerSchedules.prepareSchedule(//
                 iec61850ScheduleValues,//
                 1,// fixed for the test: fledge setup tested and set up for this schedule
                 iec61850ScheduleInterval,//
                 iec61850ScheduleStart,//
                 200);// schedule prio is arbitrary, needs to be something larger than default prio
-        dut.writeAndEnableSchedule(iec61850schedule);
-        Single<List<MqttUtility.Timestamped<Schedule>>> result = util.fetchScheduleUpdate(3,
+        dutAccess61850.writeAndEnableSchedule(iec61850schedule);
+        Single<List<MqttUtility.Timestamped<Schedule>>> result = dutAccessMQTT.fetchScheduleUpdate(3,
                 Duration.between(Instant.now(), iec61850ScheduleStart).plus(iec61850ScheduleInterval.multipliedBy(4)));
         log.debug("Schedule written, awaiting publishing of result schedule (happens every 5 seconds))");
         List<MqttUtility.Timestamped<Schedule>> timestampedObjects = result.blockingGet();
@@ -234,34 +243,39 @@ public class EmsInterfacingTests extends AllianderBaseTest {
     }
 
     // TODO: test fails, command publishing works only upon first startup as it seems (MZ: why is that?)
-    @Description("Tests that a schedules values are forwarded as a command just in time. Check publishing time, control value and 'SecondsSinceEpoch' payload. Does not check 'FractionOfSecond' of published command.")
+    @Description("Tests that a schedules values are forwarded as a command just in time. Check publishing time, "
+            + "control value and 'SecondsSinceEpoch' payload. Does not check 'FractionOfSecond' of published command."
+            + "For the test setup, a schedule is created using a IEC 61850 client. Then, the tests are carried out on"
+            + " MQTT messages that are created by FLEDGE")
     @Test
     void commandsAreForwardedJustOnTime() throws ServiceError, IOException, ExecutionException, InterruptedException {
+
         Instant iec61850ScheduleStart = Instant.now().plus(5, SECONDS).truncatedTo(SECONDS);
         List<Number> iec61850ScheduleValues = Arrays.asList(1d, 42d, 1337d);
         Duration iec61850ScheduleInterval = ofSeconds(1);
 
         // set up observation: watch all values from the schedule and changing back to default
         final int commandUpdatesToObserve = iec61850ScheduleValues.size() + 1;
-        Single<List<MqttUtility.Timestamped<Command>>> commandUpdates = util.fetchCommandUpdate(commandUpdatesToObserve,
-                iec61850ScheduleInterval.multipliedBy(commandUpdatesToObserve)
+        Single<List<MqttUtility.Timestamped<Command>>> commandUpdates = dutAccessMQTT.fetchCommandUpdate(
+                commandUpdatesToObserve, iec61850ScheduleInterval.multipliedBy(commandUpdatesToObserve)
                         .plus(Duration.between(Instant.now(), iec61850ScheduleStart).plus(ofSeconds(5))));
         // set up execution
-        PreparedSchedule iec61850schedule = dut.maxPowerSchedules.prepareSchedule(//
+        PreparedSchedule iec61850schedule = dutAccess61850.maxPowerSchedules.prepareSchedule(//
                 iec61850ScheduleValues,//
                 1,// fixed for the test: fledge setup tested and set up for this schedule
                 iec61850ScheduleInterval,//
                 iec61850ScheduleStart,//
                 200);// schedule prio is arbitrary, needs to be something larger than default prio
-        dut.writeAndEnableSchedule(iec61850schedule);
+        dutAccess61850.writeAndEnableSchedule(iec61850schedule);
 
         // wait until command changes are observed
         List<MqttUtility.Timestamped<Command>> commands = commandUpdates.blockingGet();
         // do checks on 4 command updates: check values, publishing time of cmd and "sinceEpoch" of published payload
         assertFalse(commands.isEmpty(),
-                "No MQTT commands where published localhost's MQTT broker @ topic " + util.CMD_TOPIC + ".");
+                "No MQTT commands where published localhost's MQTT broker @ topic " + dutAccessMQTT.CMD_TOPIC + ".");
         assertEquals(4, commandUpdatesToObserve);
-        assertEquals(commandUpdatesToObserve, commands.size());
+        assertEquals(commandUpdatesToObserve, commands.size(),
+                "Expected exactly " + commandUpdatesToObserve + " MQTT command messages");
 
         MqttUtility.Timestamped<Command> firstCmd = commands.get(0);
         assertEquals(iec61850ScheduleStart, firstCmd.getTimestamp().truncatedTo(SECONDS));
