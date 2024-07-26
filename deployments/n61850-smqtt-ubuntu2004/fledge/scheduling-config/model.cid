@@ -349,7 +349,7 @@
             </DOI>
             <DOI name="SchdPrio">
               <DAI name="setVal">
-                <Val>0</Val>
+                <Val>10</Val>
               </DAI>
             </DOI>
             <DOI name="ValASG001">
@@ -469,7 +469,7 @@
             </DOI>
             <DOI name="SchdPrio">
               <DAI name="setVal">
-                <Val>0</Val>
+                <Val>10</Val>
               </DAI>
             </DOI>
             <DOI name="ValASG001">
@@ -585,7 +585,7 @@
             </DOI>
             <DOI name="SchdPrio">
               <DAI name="setVal">
-                <Val>0</Val>
+                <Val>10</Val>
               </DAI>
             </DOI>
             <DOI name="ValSPG001">
