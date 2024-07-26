@@ -45,11 +45,11 @@ public abstract class AllianderBaseTest {
 
     private static final Logger logger = LoggerFactory.getLogger(ScheduleNodeTests.class);
 
-    protected static AllianderDER dut;
+    protected static AllianderDER dutAccess61850;
 
     @BeforeAll
     public static void connectToDUT() throws ServiceError, IOException {
-        dut = AllianderDER.getWithDefaultSettings();
+        dutAccess61850 = AllianderDER.getWithDefaultSettings();
     }
 
     @BeforeEach
@@ -60,14 +60,14 @@ public abstract class AllianderBaseTest {
 
     @AfterAll
     public static void shutdownConnection() {
-        dut.close();
+        dutAccess61850.close();
     }
 
     public static void disableAllRunningSchedules() {
         getAllSchedules().forEach(scheduleType -> {
             scheduleType.getAllScheduleNames().forEach(schedule -> {
                 try {
-                    dut.disableSchedules(schedule);
+                    dutAccess61850.disableSchedules(schedule);
                 } catch (Exception e) {
                     Assertions.fail("error, could not disable schedule " + schedule);
                     logger.error("error, could not disable schedule " + schedule, e);
@@ -91,7 +91,7 @@ public abstract class AllianderBaseTest {
     }
 
     protected static Stream<ScheduleDefinitions<?>> getAllSchedules() {
-        return Stream.of(dut.powerSchedules, dut.maxPowerSchedules, dut.onOffSchedules);
+        return Stream.of(dutAccess61850.powerSchedules, dutAccess61850.maxPowerSchedules, dutAccess61850.onOffSchedules);
     }
 
     public static void assertValuesMatch(List<Float> expectedValues, List<Number> actualValues, double withPercentage) {
@@ -150,8 +150,8 @@ public abstract class AllianderBaseTest {
         for (Map.Entry<String, Fc> entry : mandatory.entrySet()) {
             String fullNodeName = parentNode + "." + entry.getKey();
 
-            if (dut.nodeExists(fullNodeName)) {
-                ModelNode node = dut.getNode(fullNodeName);
+            if (dutAccess61850.nodeExists(fullNodeName)) {
+                ModelNode node = dutAccess61850.getNode(fullNodeName);
 
                 Fc actualFc = ((FcModelNode) node).getFc();
                 if (!Objects.equals(entry.getValue(), actualFc)) {
@@ -171,7 +171,7 @@ public abstract class AllianderBaseTest {
         Collection<String> violations = new LinkedList<>();
 
         for (Map.Entry<String, Fc> entry : atMostOne.entrySet()) {
-            ModelNode scheduleNode = dut.getNode(parentNode);
+            ModelNode scheduleNode = dutAccess61850.getNode(parentNode);
             if (scheduleNode == null) {
                 Assertions.fail("Unable to find node " + parentNode);
             }
@@ -195,7 +195,7 @@ public abstract class AllianderBaseTest {
         Collection<String> violations = new LinkedList<>();
 
         for (Map.Entry<String, Fc> entry : oMulti.entrySet()) {
-            List<ModelNode> occurencesThatContainKeyInName = dut.getNode(parentNode)
+            List<ModelNode> occurencesThatContainKeyInName = dutAccess61850.getNode(parentNode)
                     .getChildren()
                     .stream()//
                     .filter(childNode -> childNode.getName().contains(entry.getKey()))//
@@ -236,7 +236,7 @@ public abstract class AllianderBaseTest {
         Collection<String> violations = new LinkedList<>();
 
         for (Map.Entry<String, Fc> entry : mMulti.entrySet()) {
-            List<FcModelNode> occurencesThatContainKeyInName = dut.getNode(parentNode)
+            List<FcModelNode> occurencesThatContainKeyInName = dutAccess61850.getNode(parentNode)
                     .getChildren()
                     .stream()//
                     .filter(childNode -> childNode.getName().contains(entry.getKey()))//
@@ -293,10 +293,10 @@ public abstract class AllianderBaseTest {
 
         for (AllianderTests.MandatoryOnCondition mandatoryOnCondition : mMultiF) {
             String conditionNode = parentNode + mandatoryOnCondition.condition;
-            if (dut.nodeExists(conditionNode)) {
+            if (dutAccess61850.nodeExists(conditionNode)) {
 
                 String nowMandatoryNode = parentNode + mandatoryOnCondition.mandatoryOnCondition;
-                if (!dut.nodeExists(nowMandatoryNode)) {
+                if (!dutAccess61850.nodeExists(nowMandatoryNode)) {
                     violations.add("Node " + nowMandatoryNode + " is not present though it is required because node "
                             + conditionNode + " is present");
                 }
@@ -313,8 +313,8 @@ public abstract class AllianderBaseTest {
         for (Map.Entry<String, Fc> entry : optional.entrySet()) {
             String fullNodeName = parentNode + "." + entry.getKey();
 
-            if (dut.nodeExists(fullNodeName)) {
-                ModelNode node = dut.getNode(fullNodeName);
+            if (dutAccess61850.nodeExists(fullNodeName)) {
+                ModelNode node = dutAccess61850.getNode(fullNodeName);
 
                 Fc actualFc = ((FcModelNode) node).getFc();
                 Fc expectedFc = entry.getValue();

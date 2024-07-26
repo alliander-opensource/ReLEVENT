@@ -169,19 +169,19 @@ public class ScheduleNodeTests extends AllianderBaseTest {
         for (String scheduleName : scheduleConstants.getAllScheduleNames()) {
 
             //disable the schedule and display the name
-            dut.disableSchedule(scheduleName);
+            dutAccess61850.disableSchedule(scheduleName);
             log.info(scheduleName);
 
             //check if optional SchEntr is present
-            boolean isPresent = dut.nodeExists(scheduleName + ".SchdEntr");
+            boolean isPresent = dutAccess61850.nodeExists(scheduleName + ".SchdEntr");
             if (isPresent) {
 
                 //display the state of the schedule
-                log.info("State of the schedule: " + dut.getScheduleState(scheduleName).toString());
+                log.info("State of the schedule: " + dutAccess61850.getScheduleState(scheduleName).toString());
 
                 //if state of the schedule is not RUNNING SchdEntr might be 0
-                if (dut.getScheduleState(scheduleName) != ScheduleState.RUNNING) {
-                    String notRunningSchdEntrValueAsString = dut.getNodeEntryasString(scheduleName, "SchdEntr",
+                if (dutAccess61850.getScheduleState(scheduleName) != ScheduleState.RUNNING) {
+                    String notRunningSchdEntrValueAsString = dutAccess61850.getNodeEntryasString(scheduleName, "SchdEntr",
                             "stVal");
                     Assertions.assertEquals("0", notRunningSchdEntrValueAsString,
                             "SchdEntry is not 0 although schedule is not running");
@@ -191,9 +191,9 @@ public class ScheduleNodeTests extends AllianderBaseTest {
                 PreparedSchedule preparedSchedule = scheduleConstants.prepareSchedule(
                         scheduleConstants.getDefaultValues(1), scheduleConstants.getScheduleNumber(scheduleName),
                         ofSeconds(8), Instant.now().plusMillis(500), 20);
-                dut.writeAndEnableSchedule(preparedSchedule);
+                dutAccess61850.writeAndEnableSchedule(preparedSchedule);
                 Thread.sleep(4000);
-                String runningSchdEntrValueAsString = dut.getNodeEntryasString(scheduleName, "SchdEntr", "stVal");
+                String runningSchdEntrValueAsString = dutAccess61850.getNodeEntryasString(scheduleName, "SchdEntr", "stVal");
                 Assertions.assertNotEquals("0", runningSchdEntrValueAsString,
                         "SchdEntry is 0 although schedule is running");
             }
@@ -239,9 +239,9 @@ public class ScheduleNodeTests extends AllianderBaseTest {
                     anyPriorityHigherThanReserveSchedules);
 
             // initialize: enable schedule, then disable it again
-            dut.writeAndEnableSchedule(schedule);
+            dutAccess61850.writeAndEnableSchedule(schedule);
             Thread.sleep(1500);
-            dut.disableSchedules(scheduleName);
+            dutAccess61850.disableSchedules(scheduleName);
 
             final String spsValue = "ValSPS";
             final String mvValue = "ValMV";
@@ -258,17 +258,17 @@ public class ScheduleNodeTests extends AllianderBaseTest {
                 shouldNotExist = spsValue;
             }
 
-            assertTrue(dut.nodeExists(scheduleName + "." + shouldExist));
+            assertTrue(dutAccess61850.nodeExists(scheduleName + "." + shouldExist));
             testOptionalNodeNotPresent(scheduleConstants, shouldNotExist);
-            Assertions.assertEquals("INVALID", dut.getNodeEntryasString(scheduleName, shouldExist, "q"));
+            Assertions.assertEquals("INVALID", dutAccess61850.getNodeEntryasString(scheduleName, shouldExist, "q"));
 
             final Instant startSecondSchedule = Instant.now().plus(interval).truncatedTo(ChronoUnit.SECONDS);
             final Instant startMonitoring = startSecondSchedule.plus(interval.dividedBy(2));
             final PreparedSchedule preparedSchedule = scheduleConstants.prepareSchedule(
                     scheduleConstants.getDefaultValues(1), scheduleConstants.getScheduleNumber(scheduleName), interval,
                     startSecondSchedule, anyPriorityHigherThanReserveSchedules);
-            dut.writeAndEnableSchedule(preparedSchedule);
-            List<?> actualValues = dut.monitor(startMonitoring, interval, interval, scheduleConstants);
+            dutAccess61850.writeAndEnableSchedule(preparedSchedule);
+            List<?> actualValues = dutAccess61850.monitor(startMonitoring, interval, interval, scheduleConstants);
 
             assertUntypedValuesMatch(expectedValues, actualValues);
 
@@ -298,28 +298,28 @@ public class ScheduleNodeTests extends AllianderBaseTest {
     <X> void ActStrTmIsUpdatedProperly(ScheduleDefinitions<X> scheduleConstants)
             throws ServiceError, IOException, InterruptedException {
         for (String scheduleName : scheduleConstants.getAllScheduleNames()) {
-            if (dut.nodeExists(scheduleName + ".ActStrTm")) {
+            if (dutAccess61850.nodeExists(scheduleName + ".ActStrTm")) {
                 PreparedSchedule schedule = scheduleConstants.prepareSchedule(scheduleConstants.getDefaultValues(1),
                         scheduleConstants.getScheduleNumber(scheduleName), ofSeconds(2), Instant.now().plusMillis(500),
                         20);
 
                 //initial status
-                dut.writeAndEnableSchedule(schedule);
+                dutAccess61850.writeAndEnableSchedule(schedule);
                 Thread.sleep(1500);
-                dut.disableSchedules(scheduleName);
+                dutAccess61850.disableSchedules(scheduleName);
 
                 //if schedule is disabled, quality of ActStrTm should be invalid
-                Assertions.assertEquals("INVALID", dut.getNodeEntryasString(scheduleName, "ActStrTm", "q"));
+                Assertions.assertEquals("INVALID", dutAccess61850.getNodeEntryasString(scheduleName, "ActStrTm", "q"));
 
                 //if schedule is active, ActStrTm.stVal should have the timestamp the active schedule started
                 Instant timestamp = Instant.now().plusSeconds(2).truncatedTo(ChronoUnit.SECONDS);
                 PreparedSchedule preparedSchedule = scheduleConstants.prepareSchedule(
                         scheduleConstants.getDefaultValues(1), scheduleConstants.getScheduleNumber(scheduleName),
                         ofSeconds(4), timestamp, 20);
-                dut.writeAndEnableSchedule(preparedSchedule);
+                dutAccess61850.writeAndEnableSchedule(preparedSchedule);
                 Thread.sleep(3000);
                 Assertions.assertEquals(timestamp.toString(),
-                        dut.getNodeEntryasString(scheduleName, "ActStrTm", "stVal"));
+                        dutAccess61850.getNodeEntryasString(scheduleName, "ActStrTm", "stVal"));
             }
         }
     }
@@ -333,20 +333,20 @@ public class ScheduleNodeTests extends AllianderBaseTest {
             throws ServiceError, IOException, InterruptedException {
         for (String scheduleName : scheduleConstants.getAllScheduleNames()) {
             // disable the schedule such that there is no planned execution
-            dut.disableSchedules(scheduleName);
+            dutAccess61850.disableSchedules(scheduleName);
 
             // no planned execution -> NxtStrTm quality should be "INVALID"
-            Assertions.assertEquals("INVALID", dut.getNodeEntryasString(scheduleName, "NxtStrTm", "q"));
+            Assertions.assertEquals("INVALID", dutAccess61850.getNodeEntryasString(scheduleName, "NxtStrTm", "q"));
 
             // create a schedule in future such that we have a planned execution
             Instant timestamp = Instant.now().plusSeconds(10).truncatedTo(ChronoUnit.SECONDS);
             PreparedSchedule preparedSchedule = scheduleConstants.prepareSchedule(scheduleConstants.getDefaultValues(1),
                     scheduleConstants.getScheduleNumber(scheduleName), ofSeconds(2), timestamp, 200);
-            dut.writeAndEnableSchedule(preparedSchedule);
+            dutAccess61850.writeAndEnableSchedule(preparedSchedule);
 
             //if schedule is active, ActStrTm.stVal should have the timestamp the active schedule started and NxtStrTm quality should be "GOOD"
-            Assertions.assertEquals(timestamp.toString(), dut.getNodeEntryasString(scheduleName, "NxtStrTm", "stVal"));
-            Assertions.assertEquals("GOOD", dut.getNodeEntryasString(scheduleName, "NxtStrTm", "q"));
+            Assertions.assertEquals(timestamp.toString(), dutAccess61850.getNodeEntryasString(scheduleName, "NxtStrTm", "stVal"));
+            Assertions.assertEquals("GOOD", dutAccess61850.getNodeEntryasString(scheduleName, "NxtStrTm", "q"));
         }
     }
 
@@ -364,22 +364,22 @@ public class ScheduleNodeTests extends AllianderBaseTest {
             PreparedSchedule preparedSchedule = scheduleConstants.prepareSchedule(scheduleConstants.getDefaultValues(1),
                     scheduleConstants.getScheduleNumber(scheduleName), ofSeconds(1), Instant.now().plusSeconds(100),
                     100);
-            dut.writeAndEnableSchedule(preparedSchedule);
-            dut.disableSchedule(scheduleName);
+            dutAccess61850.writeAndEnableSchedule(preparedSchedule);
+            dutAccess61850.disableSchedule(scheduleName);
             Thread.sleep(2000);
             // test if intial state is correct: should be in inital state
-            Assertions.assertEquals(ScheduleState.NOT_READY, dut.getScheduleState(scheduleName));
+            Assertions.assertEquals(ScheduleState.NOT_READY, dutAccess61850.getScheduleState(scheduleName));
 
             // test 1: operating with value false should be possible the status should ignore that
-            BasicDataAttribute enableOp = dut.findAndAssignValue(scheduleName + ".EnaReq.Oper.ctlVal", Fc.CO, "false");
-            dut.operate((FcModelNode) enableOp.getParent().getParent());
+            BasicDataAttribute enableOp = dutAccess61850.findAndAssignValue(scheduleName + ".EnaReq.Oper.ctlVal", Fc.CO, "false");
+            dutAccess61850.operate((FcModelNode) enableOp.getParent().getParent());
             // still same state:
-            Assertions.assertEquals(ScheduleState.NOT_READY, dut.getScheduleState(scheduleName));
+            Assertions.assertEquals(ScheduleState.NOT_READY, dutAccess61850.getScheduleState(scheduleName));
 
             // test2: when operating with value true on .EnaReq.Oper.ctlVal and when integrity check passes, schedule should be in ready state
-            enableOp = dut.findAndAssignValue(scheduleName + ".EnaReq.Oper.ctlVal", Fc.CO, "true");
-            dut.operate((FcModelNode) enableOp.getParent().getParent());
-            Assertions.assertEquals(ScheduleState.READY, dut.getScheduleState(scheduleName));
+            enableOp = dutAccess61850.findAndAssignValue(scheduleName + ".EnaReq.Oper.ctlVal", Fc.CO, "true");
+            dutAccess61850.operate((FcModelNode) enableOp.getParent().getParent());
+            Assertions.assertEquals(ScheduleState.READY, dutAccess61850.getScheduleState(scheduleName));
         }
     }
 
@@ -396,30 +396,30 @@ public class ScheduleNodeTests extends AllianderBaseTest {
             // intial: schedule has valid values set
             PreparedSchedule initialSchedule = scheduleConstants.prepareSchedule(scheduleConstants.getDefaultValues(1),
                     scheduleConstants.getScheduleNumber(scheduleName), ofSeconds(1), Instant.now().plusSeconds(2), 100);
-            dut.writeAndEnableSchedule(initialSchedule);
-            dut.disableSchedule(scheduleName);
+            dutAccess61850.writeAndEnableSchedule(initialSchedule);
+            dutAccess61850.disableSchedule(scheduleName);
             Thread.sleep(2000);
             // test if initial state is correct: should be in NOT_READY
-            Assertions.assertEquals(ScheduleState.NOT_READY, dut.getScheduleState(scheduleName));
+            Assertions.assertEquals(ScheduleState.NOT_READY, dutAccess61850.getScheduleState(scheduleName));
 
             // test if operating with value false on DsaReq is ignored
-            BasicDataAttribute disableOp = dut.findAndAssignValue(scheduleName + ".DsaReq.Oper.ctlVal", Fc.CO, "false");
-            dut.operate((FcModelNode) disableOp.getParent().getParent());
-            Assertions.assertEquals(ScheduleState.NOT_READY, dut.getScheduleState(scheduleName));
+            BasicDataAttribute disableOp = dutAccess61850.findAndAssignValue(scheduleName + ".DsaReq.Oper.ctlVal", Fc.CO, "false");
+            dutAccess61850.operate((FcModelNode) disableOp.getParent().getParent());
+            Assertions.assertEquals(ScheduleState.NOT_READY, dutAccess61850.getScheduleState(scheduleName));
 
             // test, if in disabled state and operating DsaReq with true, state ist still NOT_READY
-            disableOp = dut.findAndAssignValue(scheduleName + ".DsaReq.Oper.ctlVal", Fc.CO, "true");
-            dut.operate((FcModelNode) disableOp.getParent().getParent());
-            Assertions.assertEquals(ScheduleState.NOT_READY, dut.getScheduleState(scheduleName));
+            disableOp = dutAccess61850.findAndAssignValue(scheduleName + ".DsaReq.Oper.ctlVal", Fc.CO, "true");
+            dutAccess61850.operate((FcModelNode) disableOp.getParent().getParent());
+            Assertions.assertEquals(ScheduleState.NOT_READY, dutAccess61850.getScheduleState(scheduleName));
 
             // test, if in enabled state and operating DsaReq with true, state turns into NOT_READY
             PreparedSchedule updatedSchedule = scheduleConstants.prepareSchedule(scheduleConstants.getDefaultValues(1),
                     scheduleConstants.getScheduleNumber(scheduleName), ofSeconds(5), Instant.now().plusSeconds(1), 100);
-            dut.writeAndEnableSchedule(updatedSchedule);
-            disableOp = dut.findAndAssignValue(scheduleName + ".DsaReq.Oper.ctlVal", Fc.CO, "true");
-            dut.operate((FcModelNode) disableOp.getParent().getParent());
+            dutAccess61850.writeAndEnableSchedule(updatedSchedule);
+            disableOp = dutAccess61850.findAndAssignValue(scheduleName + ".DsaReq.Oper.ctlVal", Fc.CO, "true");
+            dutAccess61850.operate((FcModelNode) disableOp.getParent().getParent());
             Thread.sleep(2000);
-            Assertions.assertEquals(ScheduleState.NOT_READY, dut.getScheduleState(scheduleName));
+            Assertions.assertEquals(ScheduleState.NOT_READY, dutAccess61850.getScheduleState(scheduleName));
         }
     }
 
@@ -435,23 +435,23 @@ public class ScheduleNodeTests extends AllianderBaseTest {
             // intial: valid values in NumEntr, Schdintv, SchdValues and test that SchdEnaErr shows no error kind
             PreparedSchedule schedule = scheduleConstants.prepareSchedule(scheduleConstants.getDefaultValues(1),
                     scheduleConstants.getScheduleNumber(scheduleName), ofSeconds(1), Instant.now().plusSeconds(2), 100);
-            dut.writeAndEnableSchedule(schedule);
+            dutAccess61850.writeAndEnableSchedule(schedule);
             Thread.sleep(200);
-            Assertions.assertEquals(ScheduleEnablingErrorKind.NONE, dut.getSchdEnaErr(scheduleName));
-            dut.disableSchedule(scheduleName);
+            Assertions.assertEquals(ScheduleEnablingErrorKind.NONE, dutAccess61850.getSchdEnaErr(scheduleName));
+            dutAccess61850.disableSchedule(scheduleName);
 
             // provoke error  MISSING_VALID_NUMENTR by setting NumEntr = -1
-            dut.setDataValues(scheduleName + ".NumEntr.setVal", null, "-1");
-            BasicDataAttribute disableOp1 = dut.findAndAssignValue(scheduleName + ".DsaReq.Oper.ctlVal", Fc.CO,
+            dutAccess61850.setDataValues(scheduleName + ".NumEntr.setVal", null, "-1");
+            BasicDataAttribute disableOp1 = dutAccess61850.findAndAssignValue(scheduleName + ".DsaReq.Oper.ctlVal", Fc.CO,
                     "false");
-            BasicDataAttribute enableOp1 = dut.findAndAssignValue(scheduleName + ".EnaReq.Oper.ctlVal", Fc.CO, "true");
+            BasicDataAttribute enableOp1 = dutAccess61850.findAndAssignValue(scheduleName + ".EnaReq.Oper.ctlVal", Fc.CO, "true");
             // operating will throw, we ignore that error
-            dut.operate((FcModelNode) disableOp1.getParent().getParent());
+            dutAccess61850.operate((FcModelNode) disableOp1.getParent().getParent());
             Executable executable1 = () -> {
-                dut.operate((FcModelNode) enableOp1.getParent().getParent());
+                dutAccess61850.operate((FcModelNode) enableOp1.getParent().getParent());
             };
             Assertions.assertThrows(ServiceError.class, executable1);
-            Assertions.assertEquals(ScheduleEnablingErrorKind.MISSING_VALID_NUMENTR, dut.getSchdEnaErr(scheduleName));
+            Assertions.assertEquals(ScheduleEnablingErrorKind.MISSING_VALID_NUMENTR, dutAccess61850.getSchdEnaErr(scheduleName));
         }
     }
 
@@ -467,23 +467,23 @@ public class ScheduleNodeTests extends AllianderBaseTest {
             // intial: valid values in NumEntr, Schdintv, SchdValues and test that SchdEnaErr shows no error kind
             PreparedSchedule schedule = scheduleConstants.prepareSchedule(scheduleConstants.getDefaultValues(1),
                     scheduleConstants.getScheduleNumber(scheduleName), ofSeconds(1), Instant.now().plusSeconds(2), 100);
-            dut.writeAndEnableSchedule(schedule);
+            dutAccess61850.writeAndEnableSchedule(schedule);
             Thread.sleep(200);
-            Assertions.assertEquals(ScheduleEnablingErrorKind.NONE, dut.getSchdEnaErr(scheduleName));
-            dut.disableSchedule(scheduleName);
+            Assertions.assertEquals(ScheduleEnablingErrorKind.NONE, dutAccess61850.getSchdEnaErr(scheduleName));
+            dutAccess61850.disableSchedule(scheduleName);
 
             // provoke error  MISSING_VALID_SCHDINTV by setting SchdIntv = -1
-            dut.setDataValues(scheduleName + ".SchdIntv.setVal", null, "-1");
-            BasicDataAttribute disableOp1 = dut.findAndAssignValue(scheduleName + ".DsaReq.Oper.ctlVal", Fc.CO,
+            dutAccess61850.setDataValues(scheduleName + ".SchdIntv.setVal", null, "-1");
+            BasicDataAttribute disableOp1 = dutAccess61850.findAndAssignValue(scheduleName + ".DsaReq.Oper.ctlVal", Fc.CO,
                     "false");
-            BasicDataAttribute enableOp1 = dut.findAndAssignValue(scheduleName + ".EnaReq.Oper.ctlVal", Fc.CO, "true");
+            BasicDataAttribute enableOp1 = dutAccess61850.findAndAssignValue(scheduleName + ".EnaReq.Oper.ctlVal", Fc.CO, "true");
             // operating will throw, we ignore that error
-            dut.operate((FcModelNode) disableOp1.getParent().getParent());
+            dutAccess61850.operate((FcModelNode) disableOp1.getParent().getParent());
             Executable executable1 = () -> {
-                dut.operate((FcModelNode) enableOp1.getParent().getParent());
+                dutAccess61850.operate((FcModelNode) enableOp1.getParent().getParent());
             };
             Assertions.assertThrows(ServiceError.class, executable1);
-            Assertions.assertEquals(ScheduleEnablingErrorKind.MISSING_VALID_SCHDINTV, dut.getSchdEnaErr(scheduleName));
+            Assertions.assertEquals(ScheduleEnablingErrorKind.MISSING_VALID_SCHDINTV, dutAccess61850.getSchdEnaErr(scheduleName));
         }
     }
 
@@ -504,20 +504,20 @@ public class ScheduleNodeTests extends AllianderBaseTest {
             int scheduleNumber = scheduleConstants.getScheduleNumber(scheduleName);
             PreparedSchedule schedule = scheduleConstants.prepareSchedule(scheduleConstants.getDefaultValues(1),
                     scheduleNumber, ofSeconds(1), Instant.now().plusSeconds(2), 100);
-            dut.writeAndEnableSchedule(schedule);
+            dutAccess61850.writeAndEnableSchedule(schedule);
             Thread.sleep(200);
-            Assertions.assertEquals(ScheduleEnablingErrorKind.NONE, dut.getSchdEnaErr(scheduleName));
-            dut.disableSchedule(scheduleName);
+            Assertions.assertEquals(ScheduleEnablingErrorKind.NONE, dutAccess61850.getSchdEnaErr(scheduleName));
+            dutAccess61850.disableSchedule(scheduleName);
 
             //Provoke MISSING_VALID_SCHEDULE_VALUES error kind by writing invalid values
             Executable excecutable = () -> {
-                dut.writeAndEnableSchedule(scheduleConstants.prepareSchedule(
+                dutAccess61850.writeAndEnableSchedule(scheduleConstants.prepareSchedule(
                         Arrays.asList(Float.NaN, Float.MAX_VALUE, Float.POSITIVE_INFINITY), scheduleNumber,
                         ofSeconds(2), Instant.now().plusSeconds(1), 100));
             };
             Assertions.assertThrows(ServiceError.class, excecutable);
             Assertions.assertEquals(ScheduleEnablingErrorKind.MISSING_VALID_SCHEDULE_VALUES,
-                    dut.getSchdEnaErr(scheduleName));
+                    dutAccess61850.getSchdEnaErr(scheduleName));
         }
     }
 
@@ -535,32 +535,32 @@ public class ScheduleNodeTests extends AllianderBaseTest {
         // intial: valid values in NumEntr
         PreparedSchedule schedule = scheduleConstants.prepareSchedule(scheduleConstants.getDefaultValues(1),
                 scheduleConstants.getScheduleNumber(scheduleName), ofSeconds(1), Instant.now().plusSeconds(2), 100);
-        dut.writeAndEnableSchedule(schedule);
+        dutAccess61850.writeAndEnableSchedule(schedule);
         Thread.sleep(200);
-        dut.disableSchedule(scheduleName);
+        dutAccess61850.disableSchedule(scheduleName);
 
         //test: 0 can not bet set to NumEtr
-        dut.setDataValues(scheduleName + ".NumEntr.setVal", null, "0");
-        BasicDataAttribute disableOp = dut.findAndAssignValue(scheduleName + ".DsaReq.Oper.ctlVal", Fc.CO, "false");
-        BasicDataAttribute enableOp = dut.findAndAssignValue(scheduleName + ".EnaReq.Oper.ctlVal", Fc.CO, "true");
-        dut.operate((FcModelNode) disableOp.getParent().getParent());
-        Executable executable = () -> dut.operate((FcModelNode) enableOp.getParent().getParent());
+        dutAccess61850.setDataValues(scheduleName + ".NumEntr.setVal", null, "0");
+        BasicDataAttribute disableOp = dutAccess61850.findAndAssignValue(scheduleName + ".DsaReq.Oper.ctlVal", Fc.CO, "false");
+        BasicDataAttribute enableOp = dutAccess61850.findAndAssignValue(scheduleName + ".EnaReq.Oper.ctlVal", Fc.CO, "true");
+        dutAccess61850.operate((FcModelNode) disableOp.getParent().getParent());
+        Executable executable = () -> dutAccess61850.operate((FcModelNode) enableOp.getParent().getParent());
         Assertions.assertThrows(ServiceError.class, executable);
 
         //test: -1 can not bet set to NumEtr
-        dut.setDataValues(scheduleName + ".NumEntr.setVal", null, "-1");
-        disableOp = dut.findAndAssignValue(scheduleName + ".DsaReq.Oper.ctlVal", Fc.CO, "false");
-        BasicDataAttribute enableOp2 = dut.findAndAssignValue(scheduleName + ".EnaReq.Oper.ctlVal", Fc.CO, "true");
-        dut.operate((FcModelNode) disableOp.getParent().getParent());
-        Executable executable2 = () -> dut.operate((FcModelNode) enableOp2.getParent().getParent());
+        dutAccess61850.setDataValues(scheduleName + ".NumEntr.setVal", null, "-1");
+        disableOp = dutAccess61850.findAndAssignValue(scheduleName + ".DsaReq.Oper.ctlVal", Fc.CO, "false");
+        BasicDataAttribute enableOp2 = dutAccess61850.findAndAssignValue(scheduleName + ".EnaReq.Oper.ctlVal", Fc.CO, "true");
+        dutAccess61850.operate((FcModelNode) disableOp.getParent().getParent());
+        Executable executable2 = () -> dutAccess61850.operate((FcModelNode) enableOp2.getParent().getParent());
         Assertions.assertThrows(ServiceError.class, executable2);
 
         //test: 200 can not bet set to NumEtr
-        dut.setDataValues(scheduleName + ".NumEntr.setVal", null, "200");
-        disableOp = dut.findAndAssignValue(scheduleName + ".DsaReq.Oper.ctlVal", Fc.CO, "false");
-        BasicDataAttribute enableOp3 = dut.findAndAssignValue(scheduleName + ".EnaReq.Oper.ctlVal", Fc.CO, "true");
-        dut.operate((FcModelNode) disableOp.getParent().getParent());
-        Executable executable3 = () -> dut.operate((FcModelNode) enableOp3.getParent().getParent());
+        dutAccess61850.setDataValues(scheduleName + ".NumEntr.setVal", null, "200");
+        disableOp = dutAccess61850.findAndAssignValue(scheduleName + ".DsaReq.Oper.ctlVal", Fc.CO, "false");
+        BasicDataAttribute enableOp3 = dutAccess61850.findAndAssignValue(scheduleName + ".EnaReq.Oper.ctlVal", Fc.CO, "true");
+        dutAccess61850.operate((FcModelNode) disableOp.getParent().getParent());
+        Executable executable3 = () -> dutAccess61850.operate((FcModelNode) enableOp3.getParent().getParent());
         Assertions.assertThrows(ServiceError.class, executable3);
 
     }
@@ -577,13 +577,13 @@ public class ScheduleNodeTests extends AllianderBaseTest {
 
         // if all other schedules are deactivated, the reserve schedule should be running
         final String reserveSchedule = scheduleConstants.getReserveSchedule();
-        Assertions.assertEquals(ScheduleState.RUNNING, dut.getScheduleState(reserveSchedule));
+        Assertions.assertEquals(ScheduleState.RUNNING, dutAccess61850.getScheduleState(reserveSchedule));
         try {
-            dut.disableSchedules(reserveSchedule);
+            dutAccess61850.disableSchedules(reserveSchedule);
         } catch (ServiceError e) {
             // an access violation may be thrown here, this indicates the schedule cannot be deactivated
         }
-        Assertions.assertEquals(ScheduleState.RUNNING, dut.getScheduleState(reserveSchedule));
+        Assertions.assertEquals(ScheduleState.RUNNING, dutAccess61850.getScheduleState(reserveSchedule));
     }
 
     @DisplayName("reserveSchedulesHaveFixedPriority")
@@ -594,11 +594,11 @@ public class ScheduleNodeTests extends AllianderBaseTest {
             throws ServiceError, IOException {
         final String reserveSchedule = scheduleConstants.getReserveSchedule();
         try {
-            dut.setSchedulePrio(reserveSchedule, 100);
+            dutAccess61850.setSchedulePrio(reserveSchedule, 100);
         } catch (ServiceError e) {
             // an access violation may be thrown here, this indicates the prio cannot be changed
         }
-        Assertions.assertEquals(10, dut.readSchedulePrio(reserveSchedule));
+        Assertions.assertEquals(10, dutAccess61850.readSchedulePrio(reserveSchedule));
     }
 
     @DisplayName("reserveSchedulesHaveFixedStart")
@@ -607,13 +607,13 @@ public class ScheduleNodeTests extends AllianderBaseTest {
     @Requirements(S15)
     public void reserveSchedulesHaveFixedStart(ScheduleDefinitions scheduleConstants) throws ServiceError, IOException {
         final String reserveSchedule = scheduleConstants.getReserveSchedule();
-        Assertions.assertEquals(Instant.ofEpochSecond(1), dut.getScheduleStart(reserveSchedule));
+        Assertions.assertEquals(Instant.ofEpochSecond(1), dutAccess61850.getScheduleStart(reserveSchedule));
         try {
-            dut.setScheduleStart(reserveSchedule, Instant.now());
+            dutAccess61850.setScheduleStart(reserveSchedule, Instant.now());
         } catch (ServiceError e) {
             // an access violation may be thrown here, this indicates the start date cannot be changed
         }
-        Assertions.assertEquals(Instant.ofEpochSecond(1), dut.getScheduleStart(reserveSchedule));
+        Assertions.assertEquals(Instant.ofEpochSecond(1), dutAccess61850.getScheduleStart(reserveSchedule));
     }
 
     /**
@@ -626,7 +626,7 @@ public class ScheduleNodeTests extends AllianderBaseTest {
      */
     private void testOptionalNodeNotPresent(ScheduleDefinitions scheduleConstants, String nodeName) {
         scheduleConstants.getAllScheduleNames().forEach(schedule -> {
-            org.junit.jupiter.api.Assertions.assertFalse(dut.nodeExists(schedule + "." + nodeName),
+            org.junit.jupiter.api.Assertions.assertFalse(dutAccess61850.nodeExists(schedule + "." + nodeName),
                     "Optional node " + nodeName
                             + " not relevant for this use case, so it should be left out (behavior cannot be tested).");
         });

@@ -15,6 +15,7 @@ package org.openmuc.fnn.steuerbox;
 
 import com.beanit.iec61850bean.ServiceError;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.openmuc.fnn.steuerbox.models.AllianderDER;
@@ -33,6 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.openmuc.fnn.steuerbox.AllianderTests.extractNumberFromLastNodeName;
 import static org.openmuc.fnn.steuerbox.mqtt.ParsingUtil.scheduleToJson;
 
+@Tag("unit")
 public class UtilityTest {
 
     @Test

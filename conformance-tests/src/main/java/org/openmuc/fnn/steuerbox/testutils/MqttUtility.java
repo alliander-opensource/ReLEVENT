@@ -50,8 +50,6 @@ public class MqttUtility implements Closeable, ScheduleWriter {
                 .serverPort(1883)
                 .build();
 
-        client.toBlocking().connect();
-
         client.toAsync().connectWith().simpleAuth().username("") // no user required in local container
                 .password("".getBytes(StandardCharsets.UTF_8)) // no password required
                 .applySimpleAuth().send().orTimeout(100, TimeUnit.MILLISECONDS).whenComplete((ack, throwable) -> {
