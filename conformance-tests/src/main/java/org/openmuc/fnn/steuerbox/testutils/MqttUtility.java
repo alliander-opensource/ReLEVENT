@@ -50,16 +50,9 @@ public class MqttUtility implements Closeable, ScheduleWriter {
                 .serverPort(1883)
                 .build();
 
-        client.toAsync().connectWith().simpleAuth().username("") // no user required in local container
+        client.toBlocking().connectWith().simpleAuth().username("") // no user required in local container
                 .password("".getBytes(StandardCharsets.UTF_8)) // no password required
-                .applySimpleAuth().send().orTimeout(100, TimeUnit.MILLISECONDS).whenComplete((ack, throwable) -> {
-                    if (throwable != null) {
-                        log.warn("Unable to connect. Is the mqtt docker container running?", throwable);
-                    }
-                    else {
-                        log.debug("Connected successfully");
-                    }
-                });
+                .applySimpleAuth().send();
 
         subscribeTopic(CMD_TOPIC, () -> this.commandConsumer);
         subscribeTopic(SCHEDULE_TOPIC, () -> this.scheduleConsumer);

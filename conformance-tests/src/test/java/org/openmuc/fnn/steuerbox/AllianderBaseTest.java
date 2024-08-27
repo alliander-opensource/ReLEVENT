@@ -53,9 +53,10 @@ public abstract class AllianderBaseTest {
     }
 
     @BeforeEach
-    public void stopAllRunningSchedules() {
+    public void stopAllRunningSchedules() throws InterruptedException {
         disableAllRunningSchedules();
         logger.debug("Disabled all schedules during init");
+        Thread.sleep(500);
     }
 
     @AfterAll
